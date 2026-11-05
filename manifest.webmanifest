@@ -1,9 +1,9 @@
 {
-  "id": "./TubeTrack.html",
+  "id": "./index.html",
   "name": "Tube Track",
   "short_name": "Tube Track",
   "description": "Music search and party queue using YouTube embedded playback",
-  "start_url": "./TubeTrack.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#090913",
