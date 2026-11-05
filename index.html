@@ -148,6 +148,21 @@ header h1{font-size:20px}.header-right{gap:6px}
 }
 @media(min-width:791px){.layout[data-mobile-tab] >section{display:flex}}
 
+/* Android PWA: Playlist panel fills the available screen height. */
+@media (max-width: 790px) {
+  .layout[data-mobile-tab="queue"] > section:nth-child(3) {
+    height: calc(100dvh - 132px);
+    min-height: 0;
+    max-height: none;
+    overflow: hidden;
+  }
+  .layout[data-mobile-tab="queue"] #queue {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+}
+
 </style>
 </head>
 <body>
