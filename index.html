@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tube Track</title>
+<meta name="theme-color" content="#100e1d"><meta name="description" content="Tube Track – searchable YouTube party queue"><meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icons/icon-192.png" type="image/png">
+<style>
+:root{color-scheme:dark;--bg:#090913;--panel:#151426;--panel2:#201c37;--line:#38304e;--text:#f7f5ff;--sub:#aba4c2;--purple:#a24bff;--pink:#f34ea3;--lime:#6ee7b7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 60% -20%,#37205d 0,transparent 50%),var(--bg);color:var(--text);font:15px system-ui,Segoe UI,Arial,sans-serif}button,input{font:inherit}button{cursor:pointer;color:inherit}header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 24px;border-bottom:1px solid var(--line);background:#100e1d}h1{margin:0;font-size:25px;letter-spacing:.5px}h1 span{color:var(--pink)}.tag{color:var(--sub);font-size:12px}.layout{display:grid;grid-template-columns:minmax(280px,1fr) minmax(340px,1.15fr) minmax(290px,.9fr);gap:15px;padding:16px;min-height:calc(100vh - 79px)}section{background:rgba(21,20,38,.95);border:1px solid var(--line);border-radius:18px;padding:18px;min-width:0}h2{margin:0 0 16px;font-size:18px}.search{display:flex;gap:8px}.search input,.keyinput{background:#0d0c17;border:1px solid #4a3c67;border-radius:10px;color:white;padding:13px;min-width:0;width:100%;outline:none}.search input:focus,.keyinput:focus{border-color:var(--purple)}.btn{border:1px solid #4c3a69;border-radius:10px;background:#302544;padding:11px 14px;font-weight:700}.btn:hover{filter:brightness(1.18)}.primary{background:linear-gradient(110deg,#8238e9,#d54bc4);border:0}.small{font-size:12px;padding:7px 10px}.result,.queueitem{display:flex;align-items:center;gap:10px;padding:10px 2px;border-bottom:1px solid #322b44}.thumb{width:90px;aspect-ratio:16/9;object-fit:cover;border-radius:7px;background:#26213a;flex-shrink:0}.song{font-size:13px;font-weight:700;line-height:1.4;overflow-wrap:anywhere}.artist{color:var(--sub);font-size:12px;margin-top:4px}.songblock{flex:1;min-width:0}.hint{color:var(--sub);font-size:13px;line-height:1.5}.plus{background:#722cc3;border:0;border-radius:10px;padding:10px 13px;font-size:20px}.player{width:100%;aspect-ratio:16/9;background:#06050b;border:1px solid #382d50;border-radius:12px;overflow:hidden;display:grid;place-items:center}.player iframe{width:100%;height:100%;border:0}.placeholder{text-align:center;padding:24px;color:var(--sub)}.controls{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:15px}.big{font-size:16px;padding:15px 8px}.active{background:#563281;border-color:#c68cff}.now{margin:13px 0;color:#f7dfff;font-size:14px;min-height:24px}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px}.count{color:var(--sub);font-size:12px}.queueitem{cursor:grab}.queueitem.dragging{opacity:.35}.queueitem.playing{background:#2b1a43;border-radius:9px;padding-left:9px}.qnum{color:var(--sub);font-size:13px;min-width:18px}.delete{background:#402039;border:1px solid #834368;color:#ff9fc0;border-radius:8px;padding:8px 10px}.delete:hover{background:#6e254a}.queuetools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.settings{margin-top:17px;border-top:1px solid var(--line);padding-top:14px}.settings summary{cursor:pointer;color:#dbc2fa}.settings p{font-size:12px;color:var(--sub);line-height:1.5}.notice{margin-top:12px;padding:10px;background:#302441;border:1px solid #54376c;border-radius:9px;font-size:12px;color:#e9dafa}.status{font-size:12px;color:var(--sub);margin-top:12px}a{color:#dda7ff}.empty{padding:25px 0;text-align:center;color:var(--sub);font-size:13px}@media(max-width:1050px){.layout{grid-template-columns:1fr 1fr}.layout section:last-child{grid-column:1/-1}}@media(max-width:700px){.layout{grid-template-columns:1fr}.layout section:last-child{grid-column:auto}header{padding:16px}.layout{padding:9px;gap:9px}section{padding:14px}}
+
+/* Tube Track v1.2 – three independent zones */
+html,body{height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;min-height:0}
+header{flex:0 0 auto;box-shadow:0 5px 25px #0006;position:relative;z-index:1}
+.layout{flex:1;min-height:0;height:auto;grid-template-columns:minmax(280px,1fr) minmax(340px,1.15fr) minmax(290px,.9fr);align-items:stretch;overflow:hidden}
+.layout>section{min-height:0;max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-shadow:inset 0 1px #ffffff0d,0 9px 30px #0003}
+#results,#queue{min-height:0;flex:1 1 auto;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding-right:8px;margin-right:-5px;scrollbar-width:thin;scrollbar-color:#a45af2 #171226}
+#results::-webkit-scrollbar,#queue::-webkit-scrollbar{width:11px}
+#results::-webkit-scrollbar-track,#queue::-webkit-scrollbar-track{background:#171226;border-radius:12px}
+#results::-webkit-scrollbar-thumb,#queue::-webkit-scrollbar-thumb{background:linear-gradient(#ae65ff,#6334a3);border-radius:12px;border:2px solid #171226}
+#searchStatus{flex:0 0 auto}
+.settings{flex:0 0 auto;max-height:34%;overflow:auto}
+.layout>section:nth-child(2){overflow-y:auto;scrollbar-width:thin;scrollbar-color:#7a43be transparent}
+.layout>section:nth-child(3)>.hint{flex:0 0 auto}
+.btn,.plus,.delete{position:relative;box-shadow:inset 0 2px 2px #ffffff31,inset 0 -3px 1px #0008,0 5px 0 #100b1e,0 8px 14px #0007;transform:translateY(0);transition:transform .11s,box-shadow .11s,filter .11s;text-shadow:0 1px 1px #0007}
+.btn:hover,.plus:hover,.delete:hover{filter:brightness(1.19);transform:translateY(-1px)}
+.btn:active,.plus:active,.delete:active{transform:translateY(4px);box-shadow:inset 0 2px 5px #0009,0 1px 0 #100b1e}
+.primary{background:linear-gradient(165deg,#c678ff 0%,#9b42e4 44%,#5d23a8 100%);border:1px solid #cf92ff}
+.plus{background:linear-gradient(160deg,#ac64f0,#6326aa);border:1px solid #ba80ff}
+.delete{background:linear-gradient(160deg,#783b61,#3f1d37)}
+.controls{padding-bottom:7px;gap:12px}
+.big{min-height:58px;border-radius:14px}
+.player{box-shadow:0 0 0 1px #aa65fa28,0 15px 36px #0009}
+.now{font-weight:700;white-space:normal}
+.dj-deck{position:relative;margin-top:18px;border:1px solid #694399;border-radius:16px;padding:16px 15px 14px;background:radial-gradient(ellipse at 50% 0%,#45266e 0%,#1b1732 63%,#11101e 100%);box-shadow:inset 0 1px 0 #d4a6ff3d,0 8px 28px #0008;overflow:hidden}
+.dj-head{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#d8b1ff;text-transform:uppercase;font-size:11px;letter-spacing:2px;font-weight:800}
+.dj-dot{width:8px;height:8px;display:inline-block;background:#d05dff;border-radius:50%;margin-right:8px;box-shadow:0 0 12px #ca65ff}
+.visualizer{height:95px;display:flex;gap:4px;align-items:center;justify-content:center;overflow:hidden;padding:12px 3px;mask-image:linear-gradient(90deg,transparent,#000 10%,#000 90%,transparent)}
+.visualizer>span{display:block;flex:1;max-width:8px;height:var(--h);border-radius:5px;background:linear-gradient(0deg,#6531b8 0%,#a44cf5 55%,#f26bc6 100%);box-shadow:0 0 8px #8d47fd88;transform-origin:center;animation:eq var(--d) ease-in-out infinite alternate;animation-delay:var(--delay)}
+.dj-deck.is-paused .visualizer>span{animation-play-state:paused;opacity:.38}
+@keyframes eq{from{transform:scaleY(.3)}to{transform:scaleY(1.1)}}
+.dj-footer{display:flex;justify-content:space-between;align-items:center;gap:14px;color:#e9d6ff;font-size:12px;font-variant-numeric:tabular-nums}
+.dj-footer strong{font-size:13px;letter-spacing:1.5px}
+.dj-progress{height:6px;border-radius:10px;background:#0b0a17;border:1px solid #594077;margin:10px 0;overflow:hidden}
+.dj-progress>div{height:100%;width:0;background:linear-gradient(90deg,#8e4bff,#f35cb6);border-radius:10px;transition:width .35s linear}
+@media(max-width:1050px){.layout{grid-template-columns:minmax(250px,1fr) minmax(300px,1fr) minmax(250px,1fr);gap:8px;padding:8px}.layout section:last-child{grid-column:auto}section{padding:12px}.thumb{width:65px}.btn.small{padding:7px}}
+@media(max-width:790px){html,body{height:auto;overflow:auto}body{display:block}.layout{display:flex;flex-direction:column;overflow:visible;height:auto;min-height:0}.layout>section{height:390px;max-height:none;flex:initial}.layout>section:nth-child(2){height:auto;overflow:visible}.layout>section:nth-child(3){height:390px}.thumb{width:80px}}
+@media(prefers-reduced-motion:reduce){.visualizer>span{animation:none}.btn,.plus,.delete{transition:none}}
+
+/* Tube Track v1.2 — restrained DJ hardware controls */
+.btn,.plus,.delete{
+  background:linear-gradient(180deg,#393448 0%,#272334 53%,#1c1928 100%);
+  border:1px solid #5b526e;
+  color:#f0edf8;
+  text-shadow:none;
+  box-shadow:inset 0 1px 0 #ffffff24,inset 0 -2px 2px #0006,0 3px 0 #0c0b14,0 5px 8px #0006;
+  transition:background .15s,border-color .15s,box-shadow .15s,transform .1s;
+}
+.btn:hover,.plus:hover,.delete:hover{filter:none;background:linear-gradient(180deg,#484055,#2e293b);border-color:#84739b;transform:translateY(-1px)}
+.btn:active,.plus:active,.delete:active{transform:translateY(2px);box-shadow:inset 0 2px 5px #0008,0 1px 0 #0c0b14}
+.btn.primary{background:linear-gradient(180deg,#534568,#382e4e 50%,#27213a);border:1px solid #7a648e;box-shadow:inset 0 1px 0 #ffffff30,0 3px 0 #100d1b,0 5px 8px #0005}
+.btn.primary:hover{background:linear-gradient(180deg,#645277,#44355b)}
+.btn.active{background:linear-gradient(180deg,#403b4d,#292534);border-color:#6f715f;box-shadow:inset 0 1px 0 #ffffff21,0 3px 0 #0f0d17,0 5px 9px #0006}
+.controls .btn{font-size:14px;min-height:54px;padding:12px 24px 12px 8px;letter-spacing:.2px}
+.controls .btn::after{content:"";position:absolute;right:10px;top:9px;width:8px;height:8px;border-radius:50%;background:#171720;border:1px solid #5d5968;box-shadow:inset 0 1px 2px #000a,0 1px 0 #ffffff10;opacity:1;transition:background .15s,border-color .15s,box-shadow .15s}
+.controls #play.led-on::after{background:#54d76f;border-color:#2b6d39;box-shadow:0 0 6px #54d76f88}
+.controls #pause.led-on::after{background:#e6c85d;border-color:#7a6821;box-shadow:0 0 6px #e6c85d88}
+.controls #next.led-on::after{background:#6db7ff;border-color:#2b5f8f;box-shadow:0 0 6px #6db7ff88}
+.controls #shuffle.led-on::after{background:#c38bff;border-color:#69439b;box-shadow:0 0 6px #c38bff88}
+.controls #wake.led-on::after{background:#f0a74a;border-color:#8a5416;box-shadow:0 0 6px #f0a74a88}
+.controls #undo.led-on::after{background:#ff8bb0;border-color:#8d3f58;box-shadow:0 0 6px #ff8bb088}
+.controls #fullscreen.led-on::after{background:#71e3dc;border-color:#2d746f;box-shadow:0 0 6px #71e3dc88}
+.controls .btn:focus-visible{outline:2px solid #b49aca;outline-offset:3px}
+.plus{font-weight:700;color:#e7dcef}
+.delete{color:#e7b6c4;border-color:#67505c}
+.dj-deck{border-color:#4d3c65;box-shadow:inset 0 1px 0 #ffffff20,0 6px 20px #0005;background:radial-gradient(ellipse at 50% 0%,#322444 0%,#181527 75%)}
+.visualizer>span{box-shadow:none;background:linear-gradient(0deg,#49386a,#8963b4)}
+.dj-dot{box-shadow:none;background:#e4bd62}
+.dj-progress>div{background:linear-gradient(90deg,#6f5897,#a18ac2)}
+/* Browser Fullscreen API removes browser chrome in supported desktop browsers. */
+:fullscreen body,:fullscreen{background:#090913}
+:fullscreen .layout{height:auto}
+@media(max-width:790px){.controls{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* v1.3: admin overlay and input-driven bars */
+.admin-settings[hidden]{display:none!important}
+.admin-settings{position:fixed;z-index:90;left:50%;top:50%;transform:translate(-50%,-50%);width:min(500px,calc(100vw - 30px));max-height:85vh;overflow:auto;background:#201b31;border:1px solid #75618b;border-radius:16px;padding:22px;box-shadow:0 0 0 100vmax #000b,0 28px 90px #000}
+.admin-settings .toolbar{margin-bottom:18px}
+.visualizer>span,.dj-deck.is-paused .visualizer>span{animation:none!important;opacity:1;transform:scaleY(.1);transition:transform .09s linear;box-shadow:none}
+.viz-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:8px}
+.viz-tools .hint{margin:0;flex:1;font-size:11px}
+.viz-tools .btn.active::after{content:'●';font-size:10px;color:#b6e877;padding-left:6px}
+
+/* Tube Track v1.4 — progress-reactive center visual */
+.visualizer,.viz-tools{display:none!important}
+.track-visual{position:relative;height:95px;border-radius:14px;overflow:hidden;margin:10px 0 4px;background:
+ radial-gradient(circle at 18% 40%,hsla(var(--flow-h1,255),85%,62%,.34),transparent 34%),
+ radial-gradient(circle at 78% 58%,hsla(var(--flow-h2,200),90%,60%,.28),transparent 36%),
+ linear-gradient(135deg,#151223 0%,#10101a 100%);
+ border:1px solid #504363;box-shadow:inset 0 1px 0 #ffffff14,0 0 0 1px #00000033;
+}
+.track-visual::before{content:"";position:absolute;inset:-18% -10%;background:
+ linear-gradient(120deg,transparent 0 15%,hsla(var(--flow-h1,255),90%,70%,.16) 25%,transparent 35%),
+ linear-gradient(300deg,transparent 0 20%,hsla(var(--flow-h2,200),90%,72%,.12) 30%,transparent 42%),
+ repeating-linear-gradient(90deg,transparent 0 14px,rgba(255,255,255,.04) 14px 16px,transparent 16px 30px);
+ filter:blur(0px);animation:flowDrift 9s linear infinite;transform:translateX(0)}
+.track-visual::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--progress-glow,hsla(260,90%,65%,.18)) 50%,transparent);mix-blend-mode:screen;opacity:.85;transform:translateX(var(--scan-x,-100%));transition:transform .8s linear, background .8s linear, opacity .35s ease}
+.track-center-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);padding:7px 14px;border-radius:999px;background:#0d0c15ba;border:1px solid #ffffff18;color:#f5f2ff;font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase;backdrop-filter:blur(4px);box-shadow:0 0 14px #0007}
+.countdown-label{position:absolute;right:12px;bottom:10px;padding:4px 8px;border-radius:999px;background:#0d0c15c2;border:1px solid #ffffff12;color:#f5d7ea;font-size:11px;font-weight:700;letter-spacing:.8px;opacity:0;transform:translateY(4px);transition:opacity .25s ease,transform .25s ease}
+.track-visual.ending{box-shadow:inset 0 1px 0 #ffffff14,0 0 0 1px #00000033,0 0 18px hsla(var(--flow-h1,12),90%,62%,.25)}
+.track-visual.ending .countdown-label{opacity:1;transform:translateY(0)}
+.track-visual.ending::after{animation:endingPulse .95s ease-in-out infinite alternate}
+.track-visual.paused::before,.track-visual.paused::after{animation-play-state:paused;opacity:.45}
+@keyframes flowDrift{0%{transform:translateX(-3%)}50%{transform:translateX(3%)}100%{transform:translateX(-3%)}}
+@keyframes endingPulse{from{opacity:.42}to{opacity:1}}
+
+
+/* v1.5 — discreet backup access to protected settings */
+.header-right{display:flex;align-items:center;gap:12px}
+.admin-lock{border:1px solid #50485d;border-radius:9px;background:linear-gradient(#2c2737,#1b1724);color:#aaa3b9;font-size:17px;width:38px;height:36px;box-shadow:inset 0 1px #ffffff14,0 2px 4px #0006;cursor:pointer}
+.admin-lock:hover,.admin-lock:focus-visible{color:#e9dfff;border-color:#8e7b9f;outline-offset:2px}
+.admin-lock:active{transform:translateY(1px)}
+/* The settings are a fixed floating modal. Put them outside scrolling panel to avoid clipping. */
+.admin-settings{position:fixed!important;z-index:9999!important;max-height:85vh!important;flex:none!important;}
+@media(max-width:700px){.header-right{gap:5px}.admin-lock{width:32px;height:32px;font-size:15px}}
+
+/* PWA mobile navigation, queue/search/player tabs */
+.mobile-tabs{display:none}
+@media(max-width:790px){
+html,body{min-height:100%;height:auto;overflow:auto}
+body{padding-bottom:env(safe-area-inset-bottom,0px)}
+header{padding:10px 12px;position:sticky;top:0;z-index:15}
+header h1{font-size:20px}.header-right{gap:6px}
+#wakeState{font-size:11px}
+.mobile-tabs{position:sticky;top:50px;z-index:14;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;background:#100e1d;padding:8px 10px;border-bottom:1px solid #443451}
+.mobile-tabs button{background:#232034;color:#cfc5dc;border:1px solid #504260;border-radius:10px;padding:11px 4px;font-weight:700;font-size:13px}
+.mobile-tabs button.selected{background:#493262;color:#fff;border-color:#b184e8}
+.layout{padding:9px;display:block;height:auto;overflow:visible}
+.layout>section{display:none!important;height:calc(100dvh - 132px);min-height:360px;max-height:none;overflow:hidden;margin:0}
+.layout[data-mobile-tab="search"]>section:nth-child(1),
+.layout[data-mobile-tab="player"]>section:nth-child(2),
+.layout[data-mobile-tab="queue"]>section:nth-child(3){display:flex!important}
+.layout>section:nth-child(2){overflow-y:auto;scrollbar-width:thin}
+.layout>section:nth-child(2) .player{flex:0 0 auto}
+#results,#queue{flex:1;min-height:0;overflow:auto}
+.controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dj-deck{flex:0 0 auto}
+}
+@media(min-width:791px){.layout[data-mobile-tab] >section{display:flex}}
+
+</style>
+</head>
+<body>
+<header><div><h1>▶ TUBE <span>TRACK</span></h1></div><div class="header-right"><div class="tag" id="wakeState">Party Mode: Off</div><button class="admin-lock" id="adminButton" type="button" title="Admin Settings (PIN)" aria-label="Open PIN-protected Admin Settings">&#128274;</button></div></header>
+<div class="settings admin-settings" id="settings" hidden><div class="toolbar"><strong>Admin Settings</strong><button class="btn small" id="closeAdmin" type="button">Close</button></div><p>A keresőhöz saját <strong>YouTube Data API v3</strong> kulcs szükséges. A kulcsot ez a böngésző tárolja helyben. Publikus terjesztéshez külön szerveroldali megoldás kell, mert a böngészőben használt kulcs megismerhető.</p><input class="keyinput" id="apiKey" type="password" placeholder="YouTube API-kulcs"><div style="display:flex;gap:8px;margin-top:9px"><button class="btn small primary" id="saveKey" type="button">Save Key</button><button class="btn small" id="clearKey" type="button">Clear Key</button></div><p><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com" target="_blank" rel="noopener">YouTube Data API engedélyezése a Google Cloudban</a></p><p class="hint">Local PIN protection prevents accidental edits; browser storage is not a secure vault.</p></div>
+<nav class="mobile-tabs" aria-label="Mobile navigation"><button type="button" data-tab="search">Search</button><button type="button" data-tab="player" class="selected">Player</button><button type="button" data-tab="queue">Playlist</button></nav>
+<main class="layout" data-mobile-tab="player">
+<section><h2>🔎 Zenekereső</h2><form id="searchForm" class="search"><input id="query" aria-label="Keresés YouTube-on" placeholder="Majka, Charlie, slágerek…" autocomplete="off"><button class="btn primary" type="submit">Search</button></form><p class="hint">Keresés közben a zene tovább szól. A <strong>+</strong> gombbal azonnal a sorba kerül a szám.</p><div id="results"><div class="empty">Írj be egy előadót vagy dalcímet.</div></div><div class="status" id="searchStatus"></div>
+
+</section>
+<section><h2>🎵 Most szól</h2><div class="player" id="playerHolder"><div class="placeholder">Válassz egy zenét a keresőből, majd nyomd meg a Lejátszás gombot.</div></div><div class="now" id="nowPlaying">Nincs kiválasztott zene</div><div class="controls"><button class="btn primary big" id="play">▶ Play</button><button class="btn big" id="pause">⏸ Pause</button><button class="btn big" id="next">⏭ Next</button><button class="btn big" id="shuffle">Shuffle</button><button class="btn big" id="wake">Party Mode</button><button class="btn big" id="undo">↶ Undo</button><button class="btn big fullscreen-button" id="fullscreen">⛶ Full Screen</button></div><div class="dj-deck is-paused" id="djDeck" aria-label="Track flow display"><div class="dj-head"><span><span class="dj-dot"></span> PARTY DECK</span><span id="vizStatus">TRACK FLOW</span></div><div class="track-visual paused" id="trackVisual" aria-hidden="true"><div class="track-center-label" id="trackLabel">Color Flow</div><div class="countdown-label" id="endWarning">Next in 10s</div></div><div class="dj-progress"><div id="djProgress"></div></div><div class="dj-footer"><strong>TUBE TRACK</strong><span id="djClock">0:00 / 0:00</span></div></div><div class="notice">A YouTube-hirdetések és a lejátszás korlátai a YouTube szabályaitól függenek. Az alkalmazás nem blokkol reklámokat. Az automatikus továbbindulást a böngésző korlátozhatja.</div><div class="status" id="playerStatus"></div></section>
+<section><div class="toolbar"><h2>📋 Lejátszási sor</h2><span class="count" id="count">0 szám</span></div><div class="queuetools"><button class="btn small" id="saveList">Save List</button><button class="btn small" id="loadList">Load List</button><button class="btn small" id="clearList">Clear List</button><input type="file" id="fileInput" accept="application/json,.json" hidden></div><p class="hint">Húzd a zenéket más sorrendbe. A kuka csak azt a számot távolítja el.</p><div id="queue"><div class="empty">A várólista üres.</div></div></section>
+</main>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);let queue=[],currentId=null,player=null,shuffle=false,wakeLock=null,wakeWanted=false,lastDeleted=null,loading=false;const storeKey='tubetrack.queue.v1',keyName='tubetrack.youtube.key';
+// Progress-reactive center visual (color flow + end-of-track warning).
+const trackVisual=$('trackVisual'),trackLabel=$('trackLabel'),endWarning=$('endWarning');
+// Hidden admin settings (Ctrl+Alt+K), locally PIN gated.
+const pinKey='tubetrack.admin.pin.v1';
+async function pinDigest(pin){const enc=new TextEncoder().encode('TubeTrack-local-PIN-v1|'+pin);const digest=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}
+async function openAdmin(){const stored=localStorage.getItem(pinKey);if(!stored){const pin=prompt('Create a 4–12 digit admin PIN for settings:');if(pin===null)return;if(!/^\d{4,12}$/.test(pin)){alert('PIN must contain 4–12 digits.');return}const repeat=prompt('Confirm the new PIN:');if(repeat!==pin){alert('PINs do not match.');return}localStorage.setItem(pinKey,await pinDigest(pin));}else{const pin=prompt('Admin PIN:');if(pin===null)return;if(await pinDigest(pin)!==stored){alert('Incorrect PIN.');return}}$('settings').hidden=false;$('apiKey').value=localStorage.getItem(keyName)||'';}
+$('adminButton').addEventListener('click',openAdmin);
+$('closeAdmin').onclick=()=>{$('settings').hidden=true;$('apiKey').value=''};
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.altKey&&e.code==='KeyK'){e.preventDefault();openAdmin()}else if(e.key==='Escape'&&!$('settings').hidden){$('closeAdmin').click()}});
+
+function flashLed(id){const el=$(id);el.classList.add('led-on');clearTimeout(el._ledTimer);el._ledTimer=setTimeout(()=>el.classList.remove('led-on'),550)}
+const fmt=t=>{t=Math.max(0,Math.floor(Number(t)||0));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+setInterval(()=>{try{const d=player?.getDuration?.()||0,t=player?.getCurrentTime?.()||0;safeText($('djClock'),fmt(t)+' / '+fmt(d));const pct=d>0?Math.min(100,100*t/d):0;$('djProgress').style.width=pct+'%';const state=player?.getPlayerState?.();const playing=state===window.YT?.PlayerState?.PLAYING;const paused=state===window.YT?.PlayerState?.PAUSED;$('play').classList.toggle('led-on',playing);$('pause').classList.toggle('led-on',paused);$('djDeck').classList.toggle('is-paused',!playing);trackVisual.classList.toggle('paused',!playing);const progress=d>0?Math.max(0,Math.min(1,t/d)):0;const hue1=Math.round(255-(progress*225));const hue2=(hue1+48)%360;trackVisual.style.setProperty('--flow-h1',String(hue1));trackVisual.style.setProperty('--flow-h2',String(hue2));trackVisual.style.setProperty('--progress-glow',`hsla(${hue1},92%,68%,.24)`);trackVisual.style.setProperty('--scan-x',`${-100 + pct*2}%`);if(d>0){safeText(trackLabel,pct<35?'Opening Flow':pct<70?'Mid Flow':'Final Flow')}else{safeText(trackLabel,'Color Flow')}const remain=Math.max(0,Math.ceil(d-t));const ending=!!(d>0&&remain<=10&&playing);trackVisual.classList.toggle('ending',ending);safeText(endWarning,ending?`Next in ${remain}s`:'Next in 10s');safeText($('vizStatus'),ending?'ENDING SOON':'TRACK FLOW')}catch(e){}},500);
+const valid=x=>x&&typeof x.id==='string'&&/^[A-Za-z0-9_-]{11}$/.test(x.id)&&typeof x.title==='string';
+function safeText(el,str){el.textContent=str||'';}
+function persist(){localStorage.setItem(storeKey,JSON.stringify(queue));}
+function restore(){try{let q=JSON.parse(localStorage.getItem(storeKey)||'[]');queue=Array.isArray(q)?q.filter(valid).slice(0,300):[]}catch(e){queue=[];}renderQueue();}
+function make(tag,cls,txt){const n=document.createElement(tag);if(cls)n.className=cls;if(txt!==undefined)n.textContent=txt;return n;}
+function renderQueue(){const wrap=$('queue');wrap.replaceChildren();safeText($('count'),`${queue.length} szám`);if(!queue.length){wrap.append(make('div','empty','A várólista üres.'));return}queue.forEach((x,i)=>{const item=make('div','queueitem'+(x.id===currentId?' playing':''));item.draggable=true;item.dataset.index=i;const num=make('span','qnum',String(i+1));const img=make('img','thumb');img.src=x.thumb||`https://i.ytimg.com/vi/${x.id}/mqdefault.jpg`;img.alt='';img.loading='lazy';const info=make('div','songblock');info.append(make('div','song',x.title),make('div','artist',x.channel||''));const go=make('button','btn small','▶');go.title='Lejátszás most';go.addEventListener('click',()=>start(x.id));const del=make('button','delete','🗑');del.title='Eltávolítás a listából';del.addEventListener('click',()=>{lastDeleted={item:x,index:i};queue.splice(i,1);persist();renderQueue();});item.append(num,img,info,go,del);item.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',String(i));item.classList.add('dragging')});item.addEventListener('dragend',()=>item.classList.remove('dragging'));item.addEventListener('dragover',e=>e.preventDefault());item.addEventListener('drop',e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/plain'));if(!Number.isInteger(from)||from<0||from>=queue.length)return;const [moved]=queue.splice(from,1);queue.splice(Number(item.dataset.index),0,moved);persist();renderQueue();});wrap.append(item)});}
+function add(x){if(!valid(x))return;queue.push(x);persist();renderQueue();safeText($('searchStatus'),`Hozzáadva: ${x.title}`)}
+function resultRow(x){const row=make('div','result');const img=make('img','thumb');img.src=x.thumb;img.alt='';img.loading='lazy';const text=make('div','songblock');text.append(make('div','song',x.title),make('div','artist',x.channel));const plus=make('button','plus','+');plus.title='Hozzáadás a várólistához';plus.addEventListener('click',()=>add(x));row.append(img,text,plus);return row;}
+async function search(q){let key=$('apiKey').value.trim()||localStorage.getItem(keyName)||'';if(!key){safeText($('searchStatus'),'API key missing. Press Ctrl+Alt+K to open Admin Settings.');return}if(loading)return;loading=true;safeText($('searchStatus'),'Keresés folyamatban…');try{const url=new URL('https://www.googleapis.com/youtube/v3/search');url.search=new URLSearchParams({part:'snippet',type:'video',maxResults:'15',q,key}).toString();const resp=await fetch(url);const data=await resp.json();if(!resp.ok)throw new Error(data.error?.message||'Sikertelen keresés');const items=(data.items||[]).map(v=>({id:v.id?.videoId,title:v.snippet?.title||'Ismeretlen',channel:v.snippet?.channelTitle||'',thumb:v.snippet?.thumbnails?.medium?.url||''})).filter(valid);$('results').replaceChildren(...items.map(resultRow));if(!items.length)$('results').append(make('div','empty','Nincs találat.'));safeText($('searchStatus'),`${items.length} találat`)}catch(e){safeText($('searchStatus'),`Hiba: ${e.message}`)}finally{loading=false}}
+function initYT(){if(window.YT?.Player)return Promise.resolve();return new Promise((resolve,reject)=>{window.onYouTubeIframeAPIReady=resolve;const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';s.onerror=()=>reject(new Error('A YouTube lejátszó nem tölthető be.'));document.head.append(s);setTimeout(()=>{if(!window.YT?.Player)reject(new Error('A YouTube lejátszó nem válaszol.'))},15000)})}
+async function start(id){const item=queue.find(x=>x.id===id);if(!item)return;currentId=id;safeText($('nowPlaying'),item.title);renderQueue();safeText($('playerStatus'),'Lejátszó betöltése…');try{await initYT();if(!player){$('playerHolder').replaceChildren();const div=make('div');div.id='ytplayer';$('playerHolder').append(div);player=new YT.Player('ytplayer',{height:'100%',width:'100%',videoId:id,playerVars:{autoplay:1,playsinline:1,rel:0},events:{onReady:e=>{e.target.playVideo();safeText($('playerStatus'),'')},onStateChange:e=>{if(e.data===YT.PlayerState.ENDED)next();if(e.data===YT.PlayerState.PLAYING)safeText($('playerStatus'),'')},onError:e=>{safeText($('playerStatus'),`A videó nem játszható le itt (hibakód: ${e.data}).`);}}});}else{player.loadVideoById(id);safeText($('playerStatus'),'')}}catch(e){safeText($('playerStatus'),e.message)}}
+function next(){if(!queue.length){safeText($('playerStatus'),'A lejátszási sor üres.');return}const idx=queue.findIndex(x=>x.id===currentId);let nextIdx;if(shuffle){const choices=queue.map((_,i)=>i).filter(i=>i!==idx);nextIdx=choices.length?choices[Math.floor(Math.random()*choices.length)]:0}else{nextIdx=(idx+1)%queue.length}start(queue[nextIdx].id)}
+
+function syncFullscreenButton(){
+ const active=!!document.fullscreenElement;
+ $('fullscreen').textContent=active?'⛶ Exit Full Screen':'⛶ Full Screen';
+ $('fullscreen').classList.toggle('active',active);$('fullscreen').classList.toggle('led-on',active);
+ $('fullscreen').setAttribute('aria-pressed',String(active));
+}
+function requestFullScreen(){
+ try{
+  if(!document.fullscreenElement && document.documentElement.requestFullscreen){
+   const pending=document.documentElement.requestFullscreen();
+   pending?.catch?.(()=>safeText($('playerStatus'),'A teljes képernyő nem engedélyezett. Nyomd meg az F11 billentyűt.'));
+  }
+ }catch(e){safeText($('playerStatus'),'Teljes képernyő: használd az F11 billentyűt.');}
+}
+function toggleFullScreen(){
+ if(document.fullscreenElement)document.exitFullscreen?.();else requestFullScreen();
+}
+document.addEventListener('fullscreenchange',syncFullscreenButton);
+$('fullscreen').addEventListener('click',toggleFullScreen);
+
+async function setWake(on){wakeWanted=on;if(on && !document.fullscreenElement)requestFullScreen();if(on){if(!('wakeLock'in navigator)){safeText($('playerStatus'),'A böngésző nem támogatja a képernyő ébren tartását.');wakeWanted=false}else{try{wakeLock=await navigator.wakeLock.request('screen')}catch(e){safeText($('playerStatus'),'A képernyő ébren tartása nem engedélyezett ebben a környezetben.');wakeWanted=false}}}else{try{await wakeLock?.release()}catch(e){}wakeLock=null}safeText($('wake'),'Party Mode');safeText($('wakeState'),`Party Mode: ${wakeWanted?'On':'Off'}`);$('wake').classList.toggle('active',wakeWanted);$('wake').classList.toggle('led-on',wakeWanted);$('wake').setAttribute('aria-pressed',String(wakeWanted))}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&wakeWanted&&!wakeLock)setWake(true)});
+$('searchForm').addEventListener('submit',e=>{e.preventDefault();const q=$('query').value.trim();if(q)search(q)});$('saveKey').onclick=()=>{const key=$('apiKey').value.trim();if(!key){safeText($('searchStatus'),'Adj meg egy API-kulcsot.');return}localStorage.setItem(keyName,key);safeText($('searchStatus'),'API-kulcs elmentve ezen az eszközön.')};$('clearKey').onclick=()=>{if(!confirm('Delete saved API key? Search will stop working until a key is added.'))return;localStorage.removeItem(keyName);$('apiKey').value='';safeText($('searchStatus'),'API key deleted.')};$('play').onclick=()=>{if(player&&currentId&&player.getPlayerState?.()===YT.PlayerState.PAUSED){player.playVideo()}else if(currentId&&player){player.playVideo()}else if(queue.length)start(queue[0].id);else safeText($('playerStatus'),'Előbb adj hozzá egy zenét.')};$('pause').onclick=()=>player?.pauseVideo();$('next').onclick=()=>{if(queue.length){flashLed('next');next()}else next()};$('shuffle').onclick=()=>{shuffle=!shuffle;safeText($('shuffle'),'Shuffle');$('shuffle').classList.toggle('active',shuffle);$('shuffle').classList.toggle('led-on',shuffle);$('shuffle').setAttribute('aria-pressed',String(shuffle))};$('wake').onclick=()=>setWake(!wakeWanted);$('undo').onclick=()=>{if(lastDeleted){flashLed('undo');queue.splice(lastDeleted.index,0,lastDeleted.item);lastDeleted=null;persist();renderQueue()}};
+$('clearList').onclick=()=>{if(queue.length&&confirm('Biztosan kiüríted a várólistát?')){queue=[];currentId=null;player?.stopVideo();safeText($('nowPlaying'),'Nincs kiválasztott zene');persist();renderQueue()}};
+$('saveList').onclick=()=>{const blob=new Blob([JSON.stringify({app:'Tube Track',version:1,queue},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob),a=make('a');a.href=url;a.download='tube-track-lista.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)};$('loadList').onclick=()=>$('fileInput').click();$('fileInput').addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const data=JSON.parse(await file.text());if(!Array.isArray(data.queue))throw Error('Hibás listaformátum');queue=data.queue.filter(valid).slice(0,300);currentId=null;persist();renderQueue();safeText($('playerStatus'),`Betöltve: ${queue.length} szám`)}catch(err){safeText($('playerStatus'),'Nem sikerült betölteni: '+err.message)}e.target.value=''});
+
+// PWA navigation and install metadata. The application never caches YouTube streams.
+const mobileTabs=[...document.querySelectorAll('.mobile-tabs [data-tab]')];
+function setMobileTab(tab){if(!['search','player','queue'].includes(tab))return;document.querySelector('.layout').dataset.mobileTab=tab;mobileTabs.forEach(b=>{const selected=b.dataset.tab===tab;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected))})}
+mobileTabs.forEach(b=>b.addEventListener('click',()=>setMobileTab(b.dataset.tab)));
+if('serviceWorker' in navigator && (location.protocol==='https:' || location.hostname==='localhost' || location.hostname==='127.0.0.1')){
+ window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+}
+
+$('apiKey').value='';$('shuffle').setAttribute('aria-pressed','false');$('wake').setAttribute('aria-pressed','false');syncFullscreenButton();restore();
+})();
+</script>
+</body></html>
